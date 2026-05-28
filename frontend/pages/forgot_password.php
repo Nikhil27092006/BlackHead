@@ -7,18 +7,19 @@
 
         <?php if(isset($_SESSION['error'])): ?>
             <div class="error-msg">
-                <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                <?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
             </div>
         <?php endif; ?>
 
         <?php if(isset($_SESSION['success'])): ?>
             <div class="error-msg" style="background: #f6fff6; color: var(--success-color); border-color: var(--success-color);">
-                <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                <?php echo htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['success']); ?>
             </div>
         <?php endif; ?>
 
         <form action="backend/handlers/auth_handler.php" method="POST">
             <input type="hidden" name="action" value="forgot_password">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             
             <div class="form-group">
                 <label for="email">Email Address</label>

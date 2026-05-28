@@ -23,10 +23,18 @@ $pages = [
     'orders'     => 'orders.php',
     'order_detail' => 'order_detail.php',
     'users'      => 'users.php',
+    'messages'   => 'messages.php',
     'settings'   => 'settings.php',
     'home_highlights' => 'home_highlights.php',
     'payment_settings' => 'payment_settings.php',
+    'coupons'    => 'coupons.php',
+    'newsletter' => 'newsletter.php',
+    'security_settings' => 'security_settings.php',
+    'edit_category' => 'edit_category.php',
 ];
+
+// Start Output Buffering
+ob_start();
 
 if (array_key_exists($page, $pages)) {
     $page_file = $pages[$page];
@@ -42,4 +50,7 @@ if ($page != 'login') {
 } else {
     include 'login.php';
 }
+
+// Flush Output
+ob_end_flush();
 ?>

@@ -15,13 +15,14 @@ $userEmail = $_SESSION['user_email'] ?? '';
             <h3 class="mb-4">Personal Information</h3>
             <form action="backend/handlers/profile_handler.php" method="POST">
                 <input type="hidden" name="action" value="update_profile">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" name="name" class="form-control" value="<?php echo $userName; ?>" required>
+                    <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($userName, ENT_QUOTES, 'UTF-8'); ?>" required>
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" name="email" class="form-control" value="<?php echo $userEmail; ?>" required>
+                    <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($userEmail, ENT_QUOTES, 'UTF-8'); ?>" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Update Profile</button>
             </form>
@@ -33,6 +34,7 @@ $userEmail = $_SESSION['user_email'] ?? '';
             <h3 class="mb-4">Change Password</h3>
             <form action="backend/handlers/profile_handler.php" method="POST">
                 <input type="hidden" name="action" value="change_password">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <div class="form-group">
                     <label>Current Password</label>
                     <input type="password" name="current_password" class="form-control" required>

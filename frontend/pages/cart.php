@@ -47,18 +47,19 @@ $total = $subtotal + $shipping;
                             <td>
                                 <div style="display: flex; gap: var(--spacing-md);">
                                     <div style="width: 100px; height: 100px; background: var(--light-bg); overflow: hidden;">
-                                        <img src="assets/images/<?php echo $item['product_image'] ?: 'placeholder.jpg'; ?>" alt="<?php echo $item['name']; ?>" style="width: 100%; height: 100%; object-fit: contain;">
+                                        <img src="assets/images/<?php echo htmlspecialchars($item['product_image'] ?: 'placeholder.jpg', ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>" style="width: 100%; height: 100%; object-fit: contain;">
                                     </div>
                                     <div style="display: flex; flex-direction: column; justify-content: center;">
-                                        <a href="index.php?page=product&id=<?php echo $item['product_id']; ?>" style="font-weight: 700; text-transform: uppercase;"><?php echo $item['name']; ?></a>
+                                        <a href="index.php?page=product&id=<?php echo (int)$item['product_id']; ?>" style="font-weight: 700; text-transform: uppercase;"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></a>
                                         <div style="font-size: 13px; margin: 5px 0;">
                                             <?php if($item['size']): ?>
-                                                <span style="background: #eee; padding: 2px 8px; font-weight: 700;">SIZE: <?php echo $item['size']; ?></span>
+                                                <span style="background: #eee; padding: 2px 8px; font-weight: 700;">SIZE: <?php echo htmlspecialchars($item['size'], ENT_QUOTES, 'UTF-8'); ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <p style="font-size: 14px; color: var(--light-text);"><?php echo formatPrice($item['price']); ?></p>
                                         <form action="backend/handlers/cart_handler.php" method="POST" style="margin-top: 10px;">
                                             <input type="hidden" name="action" value="remove">
+                                            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                                             <input type="hidden" name="cart_id" value="<?php echo $item['cart_id']; ?>">
                                             <button type="submit" class="remove-btn">Remove Item</button>
                                         </form>
@@ -68,6 +69,7 @@ $total = $subtotal + $shipping;
                             <td>
                                 <form action="backend/handlers/cart_handler.php" method="POST" id="update-form-<?php echo $item['cart_id']; ?>">
                                     <input type="hidden" name="action" value="update">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                                     <input type="hidden" name="cart_id" value="<?php echo $item['cart_id']; ?>">
                                     <div class="quantity-control">
                                         <button type="button" class="quantity-btn" onclick="this.nextElementSibling.stepDown(); this.closest('form').submit();">-</button>

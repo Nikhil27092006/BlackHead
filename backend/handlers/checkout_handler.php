@@ -8,6 +8,12 @@ if (!isLoggedIn()) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF validation
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid request. Please try again.";
+        redirect_to(SITE_URL . "index.php?page=checkout");
+    }
+
     $userId = $_SESSION['user_id'];
     $addressId = (int)$_POST['address_id'] ?? 0;
     $paymentMethod = clean($_POST['payment_method']);
@@ -35,8 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $subtotal = 0;
     foreach($cartItems as $item) $subtotal += $item['price'] * $item['quantity'];
     $shipping = (count($cartItems) > 0 && $subtotal < 1000) ? 99 : 0;
-    $total = $subtotal + $shipping;
+    // Coupon Logic
+    $couponCode = strtoupper(clean($_POST['coupon_code'] ?? ''));
+    $discountAmount = 0;
+    
+    if (!empty($couponCode)) {
+        $stmt = $pdo->prepare("SELECT * FROM coupons WHERE code = ? AND status = 'active'");
+        $stmt->execute([$couponCode]);
+        $coupon = $stmt->fetch();
+        if ($coupon) {
+            $discountAmount = ($subtotal * (float)$coupon['discount_percent']) / 100;
+        } else {
+            $couponCode = null; // Invalid coupon
+        }
+    } else {
+        $couponCode = null;
+    }
 
+    $total = $subtotal + $shipping - $discountAmount;
+    
     // Get selected address as JSON for the order
     $stmt = $pdo->prepare("SELECT * FROM user_addresses WHERE id = ?");
     $stmt->execute([$addressId]);
@@ -50,10 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         $pdo->beginTransaction();
         $orderStatus = ($paymentMethod == 'cod') ? 'confirmed' : 'pending';
+        $invDeducted = ($paymentMethod == 'cod') ? 1 : 0;
 
-        $stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, total_amount, shipping_amount, final_amount, payment_method, shipping_address, order_status) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$orderNumber, $userId, $subtotal, $shipping, $total, $paymentMethod, $addressJson, $orderStatus]);
+        $stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, total_amount, shipping_amount, final_amount, payment_method, shipping_address, order_status, coupon_code, discount_amount, inventory_deducted) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$orderNumber, $userId, $subtotal, $shipping, $total, $paymentMethod, $addressJson, $orderStatus, $couponCode, $discountAmount, $invDeducted]);
         $orderId = $pdo->lastInsertId();
 
         // Insert Order Items
@@ -62,13 +86,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->execute([$orderId, $item['product_id'], $item['variant_id'], $item['size'], $item['quantity'], $item['price'], $item['price'] * $item['quantity']]);
         }
 
-        // Clear Cart ONLY for COD. For online payments, it will be cleared after successful transaction in payment_handler.php
+        // Clear Cart & Reduce Stock ONLY for COD. 
         if ($paymentMethod == 'cod') {
+            // 1. Clear Cart
             $stmt = $pdo->prepare("DELETE FROM cart WHERE user_id = ?");
             $stmt->execute([$userId]);
+
+            // 2. Reduce Stock
+            foreach($cartItems as $item) {
+                if (!empty($item['variant_id'])) {
+                    $stCheck = $pdo->prepare("UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE id = ?");
+                    $stCheck->execute([$item['quantity'], $item['variant_id']]);
+                }
+            }
+        }
+
+        // Notify Admin (ONLY FOR COD - Online will notify after payment verification)
+        if ($paymentMethod === 'cod') {
+            $notifTitle = "New " . strtoupper($paymentMethod) . " Order: #{$orderNumber}";
+            $notifMsg = "A new " . strtoupper($paymentMethod) . " order has been placed by " . ($_SESSION['user_name'] ?? 'Customer') . ". Total: " . formatPrice($total);
+            $notifLink = "index.php?page=orders&id=" . $orderId;
+            $stmt = $pdo->prepare("INSERT INTO admin_notifications (title, message, type, link) VALUES (?, ?, 'info', ?)");
+            $stmt->execute([$notifTitle, $notifMsg, $notifLink]);
         }
 
         $pdo->commit();
+
+        // --- Razorpay Integration ---
+        if ($paymentMethod != 'cod') {
+            $p_stmt = $pdo->query("SELECT razorpay_key_id, razorpay_key_secret, razorpay_active FROM payment_settings LIMIT 1");
+            $p_settings = $p_stmt->fetch();
+
+            if ($p_settings && $p_settings['razorpay_active']) {
+                require_once '../core/razorpay_service.php';
+                $razorpay = new RazorpayService($p_settings['razorpay_key_id'], $p_settings['razorpay_key_secret']);
+                
+                $rpOrder = $razorpay->createOrder($total, $orderNumber);
+                if ($rpOrder && isset($rpOrder['id'])) {
+                    $u_stmt = $pdo->prepare("UPDATE orders SET razorpay_order_id = ? WHERE id = ?");
+                    $u_stmt->execute([$rpOrder['id'], $orderId]);
+                }
+            }
+        }
+        // ----------------------------
 
         $_SESSION['last_order_id'] = $orderId;
         $_SESSION['last_order_number'] = $orderNumber;

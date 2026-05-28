@@ -1,14 +1,44 @@
 <?php
 // Fetch basic stats
-$totalSales    = $pdo->query("SELECT SUM(final_amount) FROM orders WHERE order_status != 'cancelled'")->fetchColumn() ?: 0;
+$totalSales    = $pdo->query("SELECT SUM(final_amount) FROM orders WHERE order_status != 'cancelled' AND payment_status = 'paid'")->fetchColumn() ?: 0;
 $totalOrders   = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
 $totalUsers    = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $totalProducts = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+
+// Detailed Revenue Split
+$proRevenue    = $pdo->query("SELECT SUM(final_amount) FROM orders WHERE payment_status = 'paid' AND razorpay_payment_id IS NOT NULL")->fetchColumn() ?: 0;
+$manualRevenue = $totalSales - $proRevenue;
+$pendingRevenue = $pdo->query("SELECT SUM(final_amount) FROM orders WHERE payment_status = 'pending' AND order_status != 'cancelled'")->fetchColumn() ?: 0;
 
 // Recent Orders
 $stmt = $pdo->query("SELECT o.*, u.name as user_name FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5");
 $recentOrders = $stmt->fetchAll();
 ?>
+
+<!-- Revenue Analytics Section -->
+<div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+    <div class="admin-card-premium" style="padding: 20px; background: linear-gradient(135deg, #1e1b4b, #312e81); color: white; border: none; border-radius: 16px;">
+        <div style="font-size: 10px; font-weight: 800; opacity: 0.6; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;">Gateway Revenue</div>
+        <div style="font-size: 24px; font-family: 'Syne', sans-serif; font-weight: 800;">₹<?php echo number_format($proRevenue, 0); ?></div>
+        <div style="margin-top: 10px; font-size: 11px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 6px; display: inline-block;">
+            Verified via Razorpay
+        </div>
+    </div>
+    <div class="admin-card-premium" style="padding: 20px; background: linear-gradient(135deg, #064e3b, #065f46); color: white; border: none; border-radius: 16px;">
+        <div style="font-size: 10px; font-weight: 800; opacity: 0.6; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;">Manual Revenue</div>
+        <div style="font-size: 24px; font-family: 'Syne', sans-serif; font-weight: 800; color: #fff;">₹<?php echo number_format($manualRevenue, 0); ?></div>
+        <div style="margin-top: 10px; font-size: 11px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 6px; display: inline-block; color: #fff;">
+            COD & Manual UPI fallback
+        </div>
+    </div>
+    <div class="admin-card-premium" style="padding: 20px; background: #fff7ed; border: 1px solid #ffedd5; border-radius: 16px;">
+        <div style="font-size: 10px; font-weight: 800; color: #c2410c; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;">Pending Payments</div>
+        <div style="font-size: 24px; font-family: 'Syne', sans-serif; font-weight: 800; color: #9a3412;">₹<?php echo number_format($pendingRevenue, 0); ?></div>
+        <div style="margin-top: 10px; font-size: 11px; color: #f97316; font-weight: 600;">
+            Awaiting verification
+        </div>
+    </div>
+</div>
 
 <div class="stats-grid">
     <!-- Total Sales -->

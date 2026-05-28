@@ -31,18 +31,19 @@
 
         <?php if(isset($_SESSION['success'])): ?>
             <div style="background: #e6ffed; color: #008033; padding: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #c3e6cb; font-size: 14px;">
-                <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                <?php echo htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['success']); ?>
             </div>
         <?php endif; ?>
 
         <?php if(isset($_SESSION['error'])): ?>
             <div style="background: #fff5f5; color: #cc0000; padding: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #f5c6cb; font-size: 14px;">
-                <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                <?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
             </div>
         <?php endif; ?>
 
         <form action="<?php echo SITE_URL; ?>backend/handlers/auth_handler.php" method="POST">
             <input type="hidden" name="action" value="verify_otp">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <?php if(isset($_GET['redirect'])): ?>
                 <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_GET['redirect']); ?>">
             <?php endif; ?>

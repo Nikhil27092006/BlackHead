@@ -18,16 +18,17 @@ $addresses = $addresses->fetchAll();
             <?php foreach($addresses as $addr): ?>
                 <div style="border: 1px solid var(--border-color); padding: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <div style="font-weight: 700; margin-bottom: 5px;"><?php echo $addr['name']; ?> <?php if($addr['is_default']) echo '<span style="font-size: 10px; background: #eee; padding: 2px 6px; margin-left:10px;">DEFAULT</span>'; ?></div>
+                        <div style="font-weight: 700; margin-bottom: 5px;"><?php echo htmlspecialchars($addr['name'], ENT_QUOTES, 'UTF-8'); ?> <?php if($addr['is_default']) echo '<span style="font-size: 10px; background: #eee; padding: 2px 6px; margin-left:10px;">DEFAULT</span>'; ?></div>
                         <p style="font-size: 14px; color: var(--light-text); line-height: 1.4;">
-                            <?php echo $addr['address']; ?><br>
-                            <?php echo $addr['city']; ?>, <?php echo $addr['state']; ?> - <?php echo $addr['pincode']; ?><br>
-                            Phone: <?php echo $addr['phone']; ?>
+                            <?php echo htmlspecialchars($addr['address'], ENT_QUOTES, 'UTF-8'); ?><br>
+                            <?php echo htmlspecialchars($addr['city'], ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($addr['state'], ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars($addr['pincode'], ENT_QUOTES, 'UTF-8'); ?><br>
+                            Phone: <?php echo htmlspecialchars($addr['phone'], ENT_QUOTES, 'UTF-8'); ?>
                         </p>
                     </div>
                     <form action="backend/handlers/address_handler.php" method="POST">
                         <input type="hidden" name="action" value="delete_address">
-                        <input type="hidden" name="id" value="<?php echo $addr['id']; ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                        <input type="hidden" name="id" value="<?php echo (int)$addr['id']; ?>">
                         <button type="submit" style="background: none; border: none; color: var(--error-color); cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
                     </form>
                 </div>
@@ -42,6 +43,7 @@ $addresses = $addresses->fetchAll();
             <h3 class="mb-4" style="text-transform: uppercase; font-size: 16px;">Add New Address</h3>
             <form action="backend/handlers/address_handler.php" method="POST">
                 <input type="hidden" name="action" value="add_address">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <div class="grid-2">
                     <div class="form-group">
                         <label>Full Name</label>

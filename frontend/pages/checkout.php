@@ -109,17 +109,18 @@ $addresses = $stmt->fetchAll();
     
     <?php if(isset($_SESSION['success'])): ?>
         <div style="background: #e6ffed; color: #008033; padding: 15px; margin-top: 20px; border: 1px solid #c3e6cb; font-size: 14px;">
-            <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+            <?php echo htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
 
     <?php if(isset($_SESSION['error'])): ?>
         <div style="background: #fff5f5; color: #cc0000; padding: 15px; margin-top: 20px; border: 1px solid #f5c6cb; font-size: 14px;">
-            <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+            <?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
         </div>
     <?php endif; ?>
 
     <form id="checkout-form" action="backend/handlers/checkout_handler.php" method="POST">
+        <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
         <div class="checkout-layout">
             <!-- Left Side: Address and Payment -->
             <div class="checkout-main">
@@ -135,12 +136,12 @@ $addresses = $stmt->fetchAll();
                                 $first = false;
                             ?>
                                 <label class="address-card <?php echo $checked ? 'active' : ''; ?>">
-                                    <input type="radio" name="address_id" value="<?php echo $addr['id']; ?>" <?php echo $checked; ?>>
-                                    <div style="font-weight: 700;"><?php echo $addr['name']; ?></div>
+                                    <input type="radio" name="address_id" value="<?php echo (int)$addr['id']; ?>" <?php echo $checked; ?>>
+                                    <div style="font-weight: 700;"><?php echo htmlspecialchars($addr['name'], ENT_QUOTES, 'UTF-8'); ?></div>
                                     <div style="font-size: 14px; color: var(--light-text); margin-top: 5px;">
-                                        <?php echo $addr['address']; ?><br>
-                                        <?php echo $addr['city']; ?>, <?php echo $addr['state']; ?> - <?php echo $addr['pincode']; ?><br>
-                                        Phone: <?php echo $addr['phone']; ?>
+                                        <?php echo htmlspecialchars($addr['address'], ENT_QUOTES, 'UTF-8'); ?><br>
+                                        <?php echo htmlspecialchars($addr['city'], ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($addr['state'], ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars($addr['pincode'], ENT_QUOTES, 'UTF-8'); ?><br>
+                                        Phone: <?php echo htmlspecialchars($addr['phone'], ENT_QUOTES, 'UTF-8'); ?>
                                     </div>
                                 </label>
                             <?php endforeach; ?>
@@ -192,7 +193,26 @@ $addresses = $stmt->fetchAll();
                     <h3 style="font-weight: 900; text-transform: uppercase; margin-bottom: var(--spacing-lg);">Order Review</h3>
                     <div class="summary-row"><span>Subtotal</span><span><?php echo formatPrice($subtotal); ?></span></div>
                     <div class="summary-row"><span>Shipping</span><span><?php echo ($shipping == 0) ? 'FREE' : formatPrice($shipping); ?></span></div>
-                    <div class="summary-row summary-total"><span>Total</span><span><?php echo formatPrice($total); ?></span></div>
+                    
+                    <!-- Coupon Section -->
+                    <div style="margin: 20px 0; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 20px;">
+                        <label style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--light-text); display: block; margin-bottom: 10px;">Apply Coupon</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="coupon-input" class="form-control" placeholder="CODE..." style="text-transform: uppercase; height: 44px; font-size: 13px;">
+                            <button type="button" id="apply-coupon-btn" class="btn btn-primary" style="padding: 0 15px; height: 44px; font-size: 11px; white-space: nowrap;">APPLY</button>
+                        </div>
+                        <div id="coupon-message" style="margin-top: 10px; font-size: 12px; font-weight: 600;"></div>
+                    </div>
+
+                    <div class="summary-row" id="discount-row" style="display: none; color: #10b981;">
+                        <span>Discount</span>
+                        <span id="discount-val"></span>
+                    </div>
+
+                    <div class="summary-row summary-total"><span>Total</span><span id="display-total"><?php echo formatPrice($total); ?></span></div>
+                    
+                    <!-- Hidden input to store applied coupon for final check -->
+                    <input type="hidden" name="coupon_code" id="hidden-coupon-code" value="">
                     
                     <p style="font-size: 12px; color: var(--light-text); margin: 20px 0;">By placing an order, you agree to our terms of service.</p>
                     
@@ -212,6 +232,7 @@ $addresses = $stmt->fetchAll();
             <h4 class="mb-4" style="text-transform: uppercase; font-weight: 900; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Add Shipping Address</h4>
             <form action="backend/handlers/address_handler.php" method="POST">
                 <input type="hidden" name="action" value="add_address">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <input type="hidden" name="redirect" value="checkout">
                 <div class="grid-2">
                     <div class="form-group">
@@ -287,6 +308,58 @@ document.querySelectorAll('.payment-method').forEach(method => {
         document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
         this.classList.add('active');
         this.querySelector('input').checked = true;
+    });
+});
+
+// Coupon Logic
+const couponBtn = document.getElementById('apply-coupon-btn');
+const couponInput = document.getElementById('coupon-input');
+const couponMsg = document.getElementById('coupon-message');
+const discountRow = document.getElementById('discount-row');
+const discountVal = document.getElementById('discount-val');
+const displayTotal = document.getElementById('display-total');
+const hiddenCoupon = document.getElementById('hidden-coupon-code');
+
+const baseSubtotal = <?php echo json_encode($subtotal); ?>;
+const baseShipping = <?php echo json_encode($shipping); ?>;
+
+couponBtn.addEventListener('click', function() {
+    const code = couponInput.value.trim();
+    if(!code) return;
+
+    couponBtn.disabled = true;
+    couponBtn.textContent = '...';
+
+    const formData = new FormData();
+    formData.append('code', code);
+    formData.append('subtotal', baseSubtotal);
+
+    fetch('backend/handlers/coupon_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            couponMsg.style.color = '#10b981';
+            couponMsg.textContent = data.message;
+            discountRow.style.display = 'flex';
+            discountVal.textContent = '-' + new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(data.discount_amount);
+            
+            const newTotal = baseSubtotal - data.discount_amount + baseShipping;
+            displayTotal.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(newTotal);
+            hiddenCoupon.value = code;
+        } else {
+            couponMsg.style.color = '#ef4444';
+            couponMsg.textContent = data.message;
+            discountRow.style.display = 'none';
+            displayTotal.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(baseSubtotal + baseShipping);
+            hiddenCoupon.value = '';
+        }
+    })
+    .finally(() => {
+        couponBtn.disabled = false;
+        couponBtn.textContent = 'APPLY';
     });
 });
 </script>

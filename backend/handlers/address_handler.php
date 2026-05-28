@@ -11,6 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
     $userId = $_SESSION['user_id'];
 
+    // CSRF validation
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid request. Please try again.";
+        redirect_to(SITE_URL . "index.php?page=account");
+    }
+
     if ($action == 'add_address') {
         $name = clean($_POST['name']);
         $phone = clean($_POST['phone']);
@@ -29,23 +35,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $stmt->execute([$userId, $name, $phone, $address, $city, $state, $pincode, $is_default]);
 
             $_SESSION['success'] = "Address added successfully.";
-            $redirect = $_POST['redirect'] ?? 'address_book';
+            $allowed_redirects = ['address_book', 'checkout', 'account'];
+            $redirect = in_array($_POST['redirect'] ?? '', $allowed_redirects) ? $_POST['redirect'] : 'address_book';
             header("Location: " . SITE_URL . "index.php?page=" . $redirect);
             exit;
         } catch (PDOException $e) {
-            $_SESSION['error'] = "Failed to save address: " . $e->getMessage();
-            $redirect = $_POST['redirect'] ?? 'address_book';
+            $_SESSION['error'] = "Failed to save address.";
+            $allowed_redirects = ['address_book', 'checkout', 'account'];
+            $redirect = in_array($_POST['redirect'] ?? '', $allowed_redirects) ? $_POST['redirect'] : 'address_book';
             redirect_to(SITE_URL . "index.php?page=" . $redirect);
         }
     }
 
     if ($action == 'delete_address') {
-        $id = $_POST['id'];
+        $id = (int)$_POST['id'];
         $stmt = $pdo->prepare("DELETE FROM user_addresses WHERE id = ? AND user_id = ?");
         $stmt->execute([$id, $userId]);
         
         $_SESSION['success'] = "Address deleted.";
-        $redirect = $_POST['redirect'] ?? 'address_book';
+        $allowed_redirects = ['address_book', 'checkout', 'account'];
+        $redirect = in_array($_POST['redirect'] ?? '', $allowed_redirects) ? $_POST['redirect'] : 'address_book';
         session_write_close();
         redirect_to(SITE_URL . "index.php?page=" . $redirect);
     }

@@ -183,6 +183,8 @@ body {
 .status-shipped  { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
 .status-processing { background: rgba(139,92,246,0.15) !important; color: #a78bfa !important; }
 .status-delivered { background: rgba(16,185,129,0.15) !important; color: #6ee7b7 !important; }
+.status-returned { background: rgba(107, 119, 140, 0.15) !important; color: #6b778c !important; }
+.status-exchanged { background: rgba(139, 92, 246, 0.15) !important; color: #a78bfa !important; }
 
 /* ===== ACTION BUTTONS ===== */
 .action-btn-sleek {
@@ -417,6 +419,54 @@ input:checked + .slider {
 input:checked + .slider:before {
     transform: translateX(22px);
 }
+
+/* ===== PILL TOGGLE SWITCH (used on edit_product, home_highlights) ===== */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute; cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 34px;
+    transition: 0.3s;
+}
+.toggle-slider:before {
+    position: absolute; content: '';
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    border-color: #8b5cf6;
+}
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+    background: #fff;
+}
+
+/* Danger variant: grey → red on check */
+.toggle-switch.toggle-danger .toggle-slider { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+.toggle-switch.toggle-danger input:checked + .toggle-slider { background: linear-gradient(135deg,#ef4444,#dc2626); border-color: #ef4444; }
+.toggle-switch.toggle-danger input:checked + .toggle-slider:before { background: #fff; transform: translateX(22px); }
+
+/* Flag rows inside Visibility & Flags card */
+.flag-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 0; border-bottom: 1px solid var(--admin-border);
+}
+.flag-row:last-child { border-bottom: none; padding-bottom: 0; }
+.flag-row-text .flag-title { font-weight: 700; font-size: 13px; color: var(--admin-text-main); margin-bottom: 4px; }
+.flag-row-text .flag-desc  { font-size: 11px; color: var(--admin-text-muted); line-height: 1.4; }
 /* ===== PRODUCTS PAGE CONTROLS ===== */
 .products-control-bar {
     display: flex;

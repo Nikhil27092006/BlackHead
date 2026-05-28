@@ -9,6 +9,7 @@
 
         <form action="backend/handlers/auth_handler.php" method="POST">
             <input type="hidden" name="action" value="register">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <?php if(isset($_GET['redirect'])): ?>
                 <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_GET['redirect']); ?>">
             <?php endif; ?>

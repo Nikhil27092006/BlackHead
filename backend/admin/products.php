@@ -127,6 +127,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
                             <a href="index.php?page=edit_product&id=<?php echo $p['id']; ?>" class="action-btn-sleek" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);"><i class="fa-solid fa-pen"></i></a>
                             <form action="product_handler.php" method="POST" onsubmit="return confirm('Delete this experimental subject?');" style="display:inline; padding:0; border:none; background:transparent;">
                                 <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                                 <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
                                 <button type="submit" class="action-btn-sleek action-btn-delete" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); border: none; padding:0;"><i class="fa-solid fa-trash"></i></button>
                             </form>
@@ -138,7 +139,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
                     
                     <div class="admin-product-info">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                            <span style="font-size: 10px; font-weight: 800; color: var(--admin-accent); text-transform: uppercase; letter-spacing: 1px;"><?php echo $p['cat_name']; ?></span>
+                            <span style="font-size: 10px; font-weight: 800; color: var(--admin-accent); text-transform: uppercase; letter-spacing: 1px;"><?php echo htmlspecialchars($p['cat_name']); ?></span>
                             <span style="font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase; background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 4px;">Active</span>
                         </div>
                         <h4 style="margin: 5px 0;"><?php echo htmlspecialchars($p['name']); ?></h4>
@@ -210,6 +211,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
                     <td style="text-align:right;">
                         <form action="highlights_handler.php" method="POST" onsubmit="return confirm('Expunge this highlight?');" style="display:inline; border:none; padding:0; background:transparent;">
                             <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                             <input type="hidden" name="id" value="<?= $h['id']; ?>">
                             <button type="submit" class="action-btn-sleek action-btn-delete" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: none; padding:0;"><i class="fa-solid fa-trash"></i></button>
                         </form>

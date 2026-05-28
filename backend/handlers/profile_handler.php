@@ -12,6 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
     $userId = $_SESSION['user_id'];
 
+    // CSRF validation
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        $_SESSION['error'] = "Invalid request. Please try again.";
+        header("Location: " . SITE_URL . "index.php?page=profile");
+        exit;
+    }
+
     if ($action == 'update_profile') {
         $name = clean($_POST['name']);
         $email = clean($_POST['email']);
@@ -52,6 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
+
+        if (!$user) {
+            $_SESSION['error'] = "User not found.";
+            header("Location: " . SITE_URL . "index.php?page=profile");
+            exit;
+        }
 
         if (password_verify($current, $user['password'])) {
             $hashed = password_hash($new, PASSWORD_DEFAULT);

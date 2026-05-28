@@ -29,7 +29,14 @@ $items = $items->fetchAll();
 <div class="admin-card-premium">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 class="admin-page-title" style="margin: 0; font-size: 24px;">Order Details - #<?php echo $order['order_number']; ?></h3>
-        <a href="index.php?page=orders" class="btn btn-outline" style="padding: 10px 20px; font-size: 11px; font-weight: 800; border-radius: 8px;">BACK TO ORDERS</a>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <?php if ($order['payment_status'] == 'paid' && !empty($order['razorpay_payment_id'])): ?>
+                <button onclick="confirmRefund(<?php echo $id; ?>)" class="btn btn-outline" style="padding: 10px 20px; font-size: 11px; font-weight: 800; border-radius: 8px; border-color: #ef4444; color: #ef4444;">
+                    <i class="fa-solid fa-rotate-left"></i> REFUND VIA RAZORPAY
+                </button>
+            <?php endif; ?>
+            <a href="index.php?page=orders" class="btn btn-outline" style="padding: 10px 20px; font-size: 11px; font-weight: 800; border-radius: 8px;">BACK TO ORDERS</a>
+        </div>
     </div>
 
     <div class="grid-2" style="gap: 30px;">
@@ -139,7 +146,7 @@ $items = $items->fetchAll();
             <div style="text-align: right;">
                 <div style="margin-bottom: 10px; font-size: 14px; color: var(--admin-text-muted);">Subtotal: <span style="font-weight: 700; color: var(--admin-text-main);">₹<?php echo number_format($order['total_amount'] ?? 0, 2); ?></span></div>
                 <?php if (($order['discount_amount'] ?? 0) > 0): ?>
-                <div style="margin-bottom: 10px; font-size: 14px; color: var(--admin-text-muted);">Discount: <span style="font-weight: 700; color: #ef4444;">-₹<?php echo number_format($order['discount_amount'], 2); ?></span></div>
+                    <div style="margin-bottom: 10px; font-size: 14px; color: var(--admin-text-muted);">Discount: <span style="font-weight: 700; color: #ef4444;">-₹<?php echo number_format($order['discount_amount'], 2); ?></span></div>
                 <?php endif; ?>
                 <div style="margin-bottom: 10px; font-size: 14px; color: var(--admin-text-muted);">Shipping: <span style="font-weight: 700; color: var(--admin-text-main);">₹<?php echo number_format($order['shipping_amount'], 2); ?></span></div>
                 <div style="font-size: 18px; font-weight: 800; color: var(--admin-accent);">Total: ₹<?php echo number_format($order['final_amount'], 2); ?></div>
@@ -147,3 +154,12 @@ $items = $items->fetchAll();
         </div>
     </div>
 </div>
+
+<script>
+function confirmRefund(orderId) {
+    if (confirm("Are you sure you want to refund this payment via Razorpay? This action cannot be undone.")) {
+        // We'll create a simple refund_handler.php to process this
+        window.location.href = "refund_handler.php?order_id=" + orderId;
+    }
+}
+</script>

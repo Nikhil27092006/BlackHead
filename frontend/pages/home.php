@@ -18,6 +18,7 @@
     pointer-events: none;
     filter: blur(80px);
     will-change: transform;
+    overflow: hidden;
 }
 .hero-orb-1 {
     width: 700px; height: 700px;
@@ -47,13 +48,14 @@
     background-image:
         linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 80px 80px;
+    background-size: min(80px, 12vw) min(80px, 12vw);
     pointer-events: none;
 }
 .hero-content-wrap {
     position: relative;
     z-index: 10;
     width: 100%;
+    overflow: hidden;
 }
 .hero-eyebrow {
     display: inline-flex;
@@ -83,18 +85,23 @@
 }
 .hero-title {
     font-family: 'Syne', 'Outfit', sans-serif;
-    font-size: clamp(3.5rem, 9vw, 7.5rem);
+    font-size: clamp(2.2rem, 8vw, 7.5rem);
     font-weight: 800;
     line-height: 0.92;
     color: #fff;
-    letter-spacing: -4px;
+    letter-spacing: -2px;
     margin-bottom: 32px;
-    overflow: hidden;
+    padding-right: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
-.hero-line-1, .hero-line-2 {
+.hero-line-1 {
     display: block;
+    padding-right: 0;
 }
 .hero-line-2 {
+    display: block;
+    padding-right: 0;
     background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 40%, #ec4899 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -222,6 +229,10 @@
     padding: 0 30px;
     position: relative;
     opacity: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 .stat-item + .stat-item::before {
     content: '';
@@ -278,8 +289,8 @@
 .categories-section-wrap .section-title-xl { color: #0f172a; }
 .cat-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 32px;
     align-items: stretch;
 }
 .premium-cat-card {
@@ -288,11 +299,10 @@
     position: relative;
     cursor: pointer;
     background: #111;
-    aspect-ratio: auto;
-    height: 520px;
+    aspect-ratio: 4/5;
     will-change: transform, opacity;
 }
-.premium-cat-card.cat-tall { height: 520px; }
+.premium-cat-card.cat-tall { aspect-ratio: 4/6; }
 .premium-cat-card img {
     width: 100%; height: 100%;
     object-fit: cover;
@@ -343,13 +353,11 @@
     border-radius: 100px;
     transition: all 0.3s ease;
     text-decoration: none;
-    opacity: 0;
-    transform: translateY(10px);
+    opacity: 1;
+    transform: translateY(0);
     transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
 }
 .premium-cat-card:hover .cat-cta {
-    opacity: 1;
-    transform: translateY(0);
     background: rgba(139,92,246,0.3);
     border-color: rgba(139,92,246,0.5);
 }
@@ -365,96 +373,12 @@
 .products-section-wrap .reveal-heading { color: #fff; }
 .product-grid-new {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 48px;
 }
 .premium-product-card {
-    background: #111;
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
-    display: grid;
-    grid-template-columns: 1fr 1.1fr;
-    transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
     will-change: transform, opacity;
 }
-.premium-product-card:hover {
-    transform: translateY(-8px);
-    border-color: rgba(139,92,246,0.3);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.15);
-}
-.product-image-container {
-    aspect-ratio: 3/4;
-    overflow: hidden;
-    position: relative;
-    background: #1a1a2e;
-}
-.product-image-container img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    transition: transform 0.7s cubic-bezier(0.16,1,0.3,1);
-}
-.premium-product-card:hover .product-image-container img { transform: scale(1.07); }
-.product-badge-premium {
-    position: absolute;
-    top: 16px; left: 16px;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    padding: 5px 12px;
-    border-radius: 100px;
-    z-index: 3;
-}
-.product-wishlist-btn {
-    position: absolute;
-    top: 16px; right: 16px;
-    width: 40px; height: 40px;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    z-index: 3;
-    color: #fff;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-.product-wishlist-btn:hover {
-    background: rgba(236,72,153,0.3);
-    border-color: rgba(236,72,153,0.5);
-    color: #f472b6;
-    transform: scale(1.1);
-}
-.premium-product-info {
-    padding: 36px 32px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.premium-product-cat {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.25);
-    margin-bottom: 12px;
-}
-.premium-product-name {
-    font-family: 'Syne', 'Outfit', sans-serif;
-    font-size: clamp(1.2rem, 2vw, 1.7rem);
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.5px;
-    line-height: 1.15;
-    margin-bottom: 20px;
-    text-decoration: none;
-    display: block;
-}
-.premium-product-name:hover { color: #a78bfa; }
 .product-dna {
     display: flex;
     flex-direction: column;
@@ -660,28 +584,42 @@
     transition: transform 0.1s;
 }
 
-/* -- Mobile Responsive -- */
+/* -- Stats Band Responsive -- */
 @media (max-width: 1024px) {
     .cat-grid { grid-template-columns: 1fr 1fr; }
     .premium-cat-card.cat-tall { grid-row: span 1; height: 420px; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; }
     .stat-item + .stat-item::before { display: none; }
+    .stat-item { padding: 20px 15px; }
 }
 @media (max-width: 768px) {
     .hero-title { letter-spacing: -2px; }
     .cat-grid { grid-template-columns: 1fr; }
     .premium-cat-card { height: 340px !important; }
-    .product-grid-new { grid-template-columns: 1fr; }
-    .premium-product-card { grid-template-columns: 1fr; }
-    .product-image-container { aspect-ratio: 16/9; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .product-grid-new { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .premium-product-card { border-radius: 12px; }
+    .product-image-container { aspect-ratio: 1/1; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 20px; }
+    .stat-item { padding: 16px 10px; }
+    .stat-number { font-size: clamp(2rem, 6vw, 2.5rem); }
+    .stat-label { font-size: 10px; letter-spacing: 2px; }
     .newsletter-inner { padding: 48px 28px; }
     #cursor-dot, #cursor-ring { display: none; }
 }
 @media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 24px 12px; }
+    .stat-item { padding: 12px 8px; }
+    .stat-number { font-size: clamp(1.6rem, 5vw, 2rem); letter-spacing: -1px; }
+    .stat-label { font-size: 9px; letter-spacing: 1.5px; line-height: 1.3; }
     .hero-cta-group { flex-direction: column; }
     .btn-glow { justify-content: center; }
+}
+@media (max-width: 360px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 20px 8px; }
+    .stat-item { padding: 10px 4px; }
+    .stat-number { font-size: 1.5rem; }
+    .stat-label { font-size: 8px; }
+    .stat-label br { display: none; }
 }
 
 /* -- Advanced GSAP Utility -- */
@@ -693,10 +631,13 @@
 /* -- Floating Deco Line -- */
 .deco-line-container {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
     pointer-events: none;
     z-index: 1;
     opacity: 0.15;
+    overflow: hidden;
 }
 
 /* -- Back to Top -- */
@@ -750,19 +691,19 @@
         <div class="container">
             <div class="hero-eyebrow">
                 <span class="dot"></span>
-                SS 2025 — New Collection Dropped
+                <?php echo htmlspecialchars(getSetting('hero_eyebrow', 'SS 2025 — New Collection Dropped')); ?>
             </div>
             <h1 class="hero-title">
-                <span class="hero-line-1">ENGINEERED</span>
-                <span class="hero-line-2">EXCELLENCE</span>
+                <span class="hero-line-1"><?php echo htmlspecialchars(getSetting('hero_title_1', 'ENGINEERED')); ?></span>
+                <span class="hero-line-2"><?php echo htmlspecialchars(getSetting('hero_title_2', 'EXCELLENCE')); ?></span>
             </h1>
-            <p class="hero-subtitle">Experience the intersection of luxury and street culture. Our new collection defines the future of premium apparel.</p>
+            <p class="hero-subtitle"><?php echo htmlspecialchars(getSetting('hero_subtitle', 'Experience the intersection of luxury and street culture. Our new collection defines the future of premium apparel.')); ?></p>
             <div class="hero-cta-group">
                 <a href="index.php?page=products" class="btn-glow btn-glow-primary">
-                    Explore Collection <i class="fa-solid fa-arrow-right"></i>
+                    <?php echo htmlspecialchars(getSetting('hero_cta1_text', 'Explore Collection')); ?> <i class="fa-solid fa-arrow-right"></i>
                 </a>
                 <a href="index.php?page=about" class="btn-glow btn-glow-ghost">
-                    Our Story
+                    <?php echo htmlspecialchars(getSetting('hero_cta2_text', 'Our Story')); ?>
                 </a>
             </div>
         </div>
@@ -777,9 +718,13 @@
 <!-- ============ MARQUEE TICKER ============ -->
 <div class="marquee-strip">
     <div class="marquee-track" id="marqueeTrack">
-        <?php $items = ['Free Shipping Over ₹999','New Drop: SS 2025','Premium Streetwear','Engineered Excellence','Limited Editions','Youth Culture','Elite Athleisure','100% Authentic']; for($i=0;$i<4;$i++) foreach($items as $item): ?>
+        <?php
+        $marqueeRaw = getSetting('marquee_items', 'Free Shipping Over ₹999,New Drop: SS 2025,Premium Streetwear,Engineered Excellence,Limited Editions,Youth Culture,Elite Athleisure,100% Authentic');
+        $items = array_map('trim', explode(',', $marqueeRaw));
+        $items = array_filter($items); // remove any empty entries
+        for($i=0;$i<4;$i++) foreach($items as $item): ?>
         <span class="marquee-item">
-            <?php echo $item; ?>
+            <?php echo htmlspecialchars($item); ?>
             <span class="marquee-sep"></span>
         </span>
         <?php endforeach; ?>
@@ -791,20 +736,32 @@
     <div class="container">
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-number" data-count="12000" data-suffix="+">0+</div>
-                <div class="stat-label">Happy Customers</div>
+                <div class="stat-number"
+                     data-count="<?php echo (int)getSetting('stat1_number','12000'); ?>"
+                     data-suffix="<?php echo htmlspecialchars(getSetting('stat1_suffix','+')); ?>">
+                    0<?php echo htmlspecialchars(getSetting('stat1_suffix','+')); ?></div>
+                <div class="stat-label"><?php echo htmlspecialchars(getSetting('stat1_label','Happy Customers')); ?></div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" data-count="500" data-suffix="+">0+</div>
-                <div class="stat-label">Products Available</div>
+                <div class="stat-number"
+                     data-count="<?php echo (int)getSetting('stat2_number','500'); ?>"
+                     data-suffix="<?php echo htmlspecialchars(getSetting('stat2_suffix','+')); ?>">
+                    0<?php echo htmlspecialchars(getSetting('stat2_suffix','+')); ?></div>
+                <div class="stat-label"><?php echo htmlspecialchars(getSetting('stat2_label','Products Available')); ?></div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" data-count="98" data-suffix="%">0%</div>
-                <div class="stat-label">Satisfaction Rate</div>
+                <div class="stat-number"
+                     data-count="<?php echo (int)getSetting('stat3_number','98'); ?>"
+                     data-suffix="<?php echo htmlspecialchars(getSetting('stat3_suffix','%')); ?>">
+                    0<?php echo htmlspecialchars(getSetting('stat3_suffix','%')); ?></div>
+                <div class="stat-label"><?php echo htmlspecialchars(getSetting('stat3_label','Satisfaction Rate')); ?></div>
             </div>
             <div class="stat-item">
-                <div class="stat-number" data-count="4" data-suffix="+">0+</div>
-                <div class="stat-label">Years Of Excellence</div>
+                <div class="stat-number"
+                     data-count="<?php echo (int)getSetting('stat4_number','4'); ?>"
+                     data-suffix="<?php echo htmlspecialchars(getSetting('stat4_suffix','+')); ?>">
+                    0<?php echo htmlspecialchars(getSetting('stat4_suffix','+')); ?></div>
+                <div class="stat-label"><?php echo htmlspecialchars(getSetting('stat4_label','Years Of Excellence')); ?></div>
             </div>
         </div>
     </div>
@@ -822,36 +779,24 @@
         </div>
 
         <div class="cat-grid categories-section-wrap-grid">
-            <!-- MEN - tall -->
-            <div class="premium-cat-card cat-tall" onclick="location.href='index.php?page=products&category=men'" style="grid-row: span 1;">
-                <img src="assets/images/cat-men.jpg" alt="Men's Collection" loading="lazy">
+            <?php
+            // Dynamic Home Categories
+            $homeCats = $pdo->query("SELECT * FROM categories WHERE status = 'active' AND parent_id IS NULL ORDER BY sort_order ASC, name ASC")->fetchAll();
+            foreach($homeCats as $hc):
+                // Priority: 1. Database uploaded image, 2. Legacy naming convention, 3. Placeholder
+                $catImg = $hc['image'] ? "assets/images/" . $hc['image'] : "assets/images/cat-" . $hc['slug'] . ".jpg";
+                if(!file_exists(ROOT_PATH . $catImg)) $catImg = "assets/images/placeholder.jpg";
+            ?>
+            <div class="premium-cat-card" onclick="location.href='index.php?page=products&category=<?php echo $hc['slug']; ?>'">
+                <img src="<?php echo $catImg; ?>" alt="<?php echo htmlspecialchars($hc['name']); ?> Collection" loading="lazy">
                 <div class="premium-cat-overlay"></div>
                 <div class="premium-cat-content">
-                    <span class="cat-tag">Premium Essentials</span>
-                    <h2 class="cat-name">MEN</h2>
-                    <a href="index.php?page=products&category=men" class="cat-cta">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
+                    <span class="cat-tag"><?php echo htmlspecialchars($hc['description'] ?: 'Elite Collection'); ?></span>
+                    <h2 class="cat-name"><?php echo strtoupper(htmlspecialchars($hc['name'])); ?></h2>
+                    <a href="index.php?page=products&category=<?php echo $hc['slug']; ?>" class="cat-cta">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
             </div>
-            <!-- WOMEN -->
-            <div class="premium-cat-card" onclick="location.href='index.php?page=products&category=women'">
-                <img src="assets/images/cat-women.jpg" alt="Women's Collection" loading="lazy">
-                <div class="premium-cat-overlay"></div>
-                <div class="premium-cat-content">
-                    <span class="cat-tag">Elite Athleisure</span>
-                    <h2 class="cat-name">WOMEN</h2>
-                    <a href="index.php?page=products&category=women" class="cat-cta">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-            </div>
-            <!-- KIDS -->
-            <div class="premium-cat-card" onclick="location.href='index.php?page=products&category=kids'">
-                <img src="assets/images/cat-kids.jpg" alt="Kids Collection" loading="lazy">
-                <div class="premium-cat-overlay"></div>
-                <div class="premium-cat-content">
-                    <span class="cat-tag">Youth Culture</span>
-                    <h2 class="cat-name">KIDS</h2>
-                    <a href="index.php?page=products&category=kids" class="cat-cta">Shop Now <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
@@ -873,7 +818,7 @@
             foreach($products as $p):
                 $image = $p['product_image'] ?: 'placeholder.jpg';
             ?>
-            <div class="premium-product-card">
+            <div class="premium-product-card" onclick="location.href='index.php?page=product&id=<?php echo $p['id']; ?>'" style="cursor:pointer;">
                 <div class="product-image-container">
                     <?php if($p['is_new']): ?>
                         <div class="product-badge-premium">New Drop</div>
@@ -887,14 +832,14 @@
                     <form action="backend/handlers/wishlist_handler.php" method="POST">
                         <input type="hidden" name="action" value="toggle">
                         <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
-                        <button type="submit" class="product-wishlist-btn" title="Add to wishlist">
+                        <button type="submit" class="product-wishlist-btn" title="Add to wishlist" onclick="event.stopPropagation();">
                             <i class="<?php echo isLoggedIn() && isInWishlist($pdo, $_SESSION['user_id'], $p['id']) ? 'fa-solid' : 'fa-regular'; ?> fa-heart"></i>
                         </button>
                     </form>
                 </div>
                 <div class="premium-product-info">
                     <div>
-                        <div class="premium-product-cat">Clothing / Essentials</div>
+                        <div class="premium-product-cat"><?php echo htmlspecialchars($p['cat_name'] ?? 'Elite Collection'); ?></div>
                         <a href="index.php?page=product&id=<?php echo $p['id']; ?>" class="premium-product-name"><?php echo htmlspecialchars($p['name']); ?></a>
                         
                         <div class="premium-product-desc" style="font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 24px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3.2em;">
@@ -902,8 +847,8 @@
                         </div>
 
                         <div class="product-dna">
-                            <div class="dna-item"><i class="fa-solid fa-microchip"></i><span><span class="dna-badge">Tech</span> High-Density Breathable Luxury Fabric</span></div>
-                            <div class="dna-item"><i class="fa-solid fa-ruler-combined"></i><span><span class="dna-badge">Fit</span> Precision Engineered Modern Silhouette</span></div>
+                            <div class="dna-item"><i class="fa-solid fa-microchip"></i><span><span class="dna-badge">Tech</span> <?php echo htmlspecialchars($p['dna_tech'] ?: 'High-Density Breathable Luxury Fabric'); ?></span></div>
+                            <div class="dna-item"><i class="fa-solid fa-ruler-combined"></i><span><span class="dna-badge">Fit</span> <?php echo htmlspecialchars($p['dna_fit'] ?: 'Precision Engineered Modern Silhouette'); ?></span></div>
                         </div>
                     </div>
                     <div style="margin-top: auto;">
@@ -923,6 +868,80 @@
     </div>
 </section>
 
+<!-- ============ DYNAMIC CUSTOM COLLECTIONS ============ -->
+<?php
+// Fetch dynamic custom sections
+$customSections = $pdo->query("SELECT * FROM homepage_custom_sections WHERE status = 'active' ORDER BY sort_order ASC")->fetchAll();
+foreach($customSections as $section):
+    $sid = $section['id'];
+    // Fetch products for this specific section
+    $stmt = $pdo->prepare("
+        SELECT p.*, c.name as cat_name, pi.image as product_image, 
+               (SELECT SUM(stock_quantity) FROM product_variants WHERE product_id = p.id) as total_stock
+        FROM products p 
+        LEFT JOIN categories c ON p.category_id = c.id
+        JOIN homepage_custom_section_products hcp ON p.id = hcp.product_id
+        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1 
+        WHERE hcp.section_id = ? AND p.status = 'active'
+        GROUP BY p.id
+        ORDER BY hcp.sort_order ASC
+    ");
+    $stmt->execute([$sid]);
+    $secProducts = $stmt->fetchAll();
+    
+    if(empty($secProducts)) continue;
+?>
+<section class="products-section-wrap" style="padding-top: 0;">
+    <div class="container">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div class="reveal-heading">
+                <span class="section-eyebrow"><?php echo htmlspecialchars($section['eyebrow']); ?></span>
+                <h2 class="section-title-xl"><?php echo htmlspecialchars($section['title_1']); ?> <em style="font-style:italic; font-weight:400;"><?php echo htmlspecialchars($section['title_2']); ?></em></h2>
+            </div>
+        </div>
+
+        <div class="product-grid-new">
+            <?php
+            foreach($secProducts as $p):
+                $image = $p['product_image'] ?: 'placeholder.jpg';
+            ?>
+            <div class="premium-product-card" onclick="location.href='index.php?page=product&id=<?php echo $p['id']; ?>'" style="cursor:pointer;">
+                <div class="product-image-container">
+                    <?php if($p['is_new']): ?>
+                        <div class="product-badge-premium">New Drop</div>
+                    <?php endif; ?>
+                    <a href="index.php?page=product&id=<?php echo $p['id']; ?>">
+                        <img src="assets/images/<?php echo $image; ?>" alt="<?php echo htmlspecialchars($p['name']); ?>" loading="lazy">
+                    </a>
+                </div>
+                <div class="premium-product-info">
+                    <div>
+                        <div class="premium-product-cat">Exclusive Collection</div>
+                        <a href="index.php?page=product&id=<?php echo $p['id']; ?>" class="premium-product-name"><?php echo htmlspecialchars($p['name']); ?></a>
+                        
+                        <div class="premium-product-desc" style="font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 24px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3.2em;">
+                            <?php echo htmlspecialchars($p['description']); ?>
+                        </div>
+
+                        <div class="product-dna">
+                            <div class="dna-item"><i class="fa-solid fa-microchip"></i><span><span class="dna-badge">Tech</span> <?php echo htmlspecialchars($p['dna_tech'] ?: 'High-Density Breathable Luxury Fabric'); ?></span></div>
+                            <div class="dna-item"><i class="fa-solid fa-ruler-combined"></i><span><span class="dna-badge">Fit</span> <?php echo htmlspecialchars($p['dna_fit'] ?: 'Precision Engineered Modern Silhouette'); ?></span></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: auto;">
+                        <div class="premium-product-price" style="margin-bottom: 16px;"><?php echo formatPrice($p['price']); ?></div>
+                        <a href="index.php?page=product&id=<?php echo $p['id']; ?>" class="btn-product-shop">
+                            Shop Now <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endforeach; ?>
+
 <!-- ============ NEWSLETTER ============ -->
 <section class="newsletter-section">
     <div class="container">
@@ -938,3 +957,47 @@
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // GSAP Animations for Homepage
+    if (typeof gsap !== 'undefined') {
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Hero Parallax & Entrance
+        gsap.to('.hero-orb-1', {
+            x: '30%', y: '10%', duration: 20, repeat: -1, yoyo: true, ease: 'sine.inOut'
+        });
+        gsap.to('.hero-orb-2', {
+            x: '-20%', y: '-15%', duration: 15, repeat: -1, yoyo: true, ease: 'sine.inOut'
+        });
+
+        // Section Headers Stagger
+        document.querySelectorAll('.section-header').forEach(header => {
+            gsap.from(header.children, {
+                scrollTrigger: { trigger: header, start: 'top 85%' },
+                y: 30, opacity: 0, stagger: 0.1, duration: 0.8, ease: 'power3.out'
+            });
+        });
+
+        // Product Cards Stagger
+        document.querySelectorAll('.premium-product-card').forEach((card, index) => {
+            gsap.from(card, {
+                scrollTrigger: { trigger: card, start: 'top 90%' },
+                y: 50, opacity: 0, duration: 0.8, delay: (index % 4) * 0.1, ease: 'power3.out'
+            });
+        });
+        
+        // Mouse-tracking glow effect for product cards
+        document.querySelectorAll('.premium-product-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    }
+});
+</script>

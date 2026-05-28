@@ -4,7 +4,15 @@ require_once '../core/config.php';
 require_once '../core/functions.php';
 
 if (!isLoggedIn()) {
+    $_SESSION['error'] = "You must be logged in.";
     header("Location: " . SITE_URL . "index.php?page=login");
+    exit;
+}
+
+// CSRF validation
+if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+    $_SESSION['error'] = "Invalid request. Please try again.";
+    header("Location: " . SITE_URL . "index.php?page=wishlist");
     exit;
 }
 
@@ -32,8 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Redirect back to referring page or wishlist
-$referrer = $_SERVER['HTTP_REFERER'] ?? (SITE_URL . 'index.php?page=wishlist');
-header("Location: $referrer");
+// Redirect back to wishlist
+header("Location: " . SITE_URL . "index.php?page=wishlist");
 exit;
 ?>

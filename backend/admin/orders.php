@@ -42,6 +42,8 @@
                                 <option value="shipped" <?php echo $o['order_status'] == 'shipped' ? 'selected' : ''; ?>>Shipped</option>
                                 <option value="delivered" <?php echo $o['order_status'] == 'delivered' ? 'selected' : ''; ?>>Delivered</option>
                                 <option value="cancelled" <?php echo $o['order_status'] == 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                <option value="returned" <?php echo $o['order_status'] == 'returned' ? 'selected' : ''; ?>>Returned</option>
+                                <option value="exchanged" <?php echo $o['order_status'] == 'exchanged' ? 'selected' : ''; ?>>Exchanged</option>
                             </select>
                             <a href="index.php?page=order_detail&id=<?php echo $o['id']; ?>" class="action-btn-sleek"><i class="fa-solid fa-eye"></i></a>
                         </div>

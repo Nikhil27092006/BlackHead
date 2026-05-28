@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login | BLACKHEAD</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../assets/images/favicon-16x16.png">
     <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
 <body style="background: #f0f2f5; height: 100vh; display: flex; align-items: center; justify-content: center;">
@@ -14,7 +18,7 @@
         </div>
 
         <?php if(isset($_SESSION['error'])): ?>
-            <div class="error-msg"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="error-msg"><?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <form action="auth_handler.php" method="POST">

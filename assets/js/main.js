@@ -42,7 +42,242 @@ document.addEventListener('DOMContentLoaded', function() {
     ============================================ */
     if (typeof gsap === 'undefined') return;
 
-    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+    /* ---- Brand Logo Letter-Splitting & Premium Interactions ---- */
+    const logos = document.querySelectorAll('.logo');
+    logos.forEach(logo => {
+        // Disable default CSS hover transitions for smooth GSAP control
+        logo.classList.add('js-split');
+        
+        const text = logo.innerText.trim();
+        logo.innerHTML = '';
+        
+        [...text].forEach(char => {
+            const span = document.createElement('span');
+            span.className = 'logo-char';
+            span.textContent = char;
+            logo.appendChild(span);
+        });
+
+        const chars = logo.querySelectorAll('.logo-char');
+        let idleTween = null;
+
+        function startIdle() {
+            if (idleTween) idleTween.kill();
+            // Clean slate set
+            gsap.set(chars, { y: 0 });
+            idleTween = gsap.fromTo(chars, 
+                { y: 3 },
+                {
+                    y: -6,
+                    duration: 0.65, // Faster wave cycle
+                    stagger: {
+                        each: 0.05, // Faster transition between letters
+                        repeat: -1,
+                        yoyo: true
+                    },
+                    ease: "sine.inOut"
+                }
+            );
+        }
+
+        // Store function on element so it can be triggered on entrance completion
+        logo.startLogoIdle = startIdle;
+
+        // Start idle right away if it's not the header logo or footer logo (which wait for entrance triggers)
+        if (!logo.closest('#site-header') && !logo.closest('footer')) {
+            startIdle();
+        }
+
+        // Hover listeners to pause/resume idle state
+        logo.addEventListener('mouseenter', () => {
+            if (idleTween) {
+                idleTween.kill();
+                idleTween = null;
+            }
+            // Transition letters back to center swiftly before hover takes over
+            gsap.to(chars, { y: 0, duration: 0.25, ease: "power2.out" });
+        });
+
+        logo.addEventListener('mouseleave', () => {
+            // Re-trigger the ongoing idle wave
+            startIdle();
+        });
+
+        chars.forEach((char, index) => {
+            char.addEventListener('mouseenter', () => {
+                // Bounce hovered character up and rotate
+                gsap.to(char, {
+                    y: -12,
+                    scale: 1.25,
+                    rotate: 15,
+                    color: '#a78bfa',
+                    textShadow: '0 0 15px rgba(167, 139, 250, 0.8)',
+                    duration: 0.2, // Snappier enter
+                    ease: "back.out(2)"
+                });
+                
+                // Fluid ripple effect on neighbors
+                if (chars[index - 1]) {
+                    gsap.to(chars[index - 1], {
+                        y: -5,
+                        scale: 1.1,
+                        rotate: 7,
+                        color: '#c4b5fd',
+                        duration: 0.2,
+                        ease: "power2.out"
+                    });
+                }
+                if (chars[index + 1]) {
+                    gsap.to(chars[index + 1], {
+                        y: -5,
+                        scale: 1.1,
+                        rotate: -7,
+                        color: '#c4b5fd',
+                        duration: 0.2,
+                        ease: "power2.out"
+                    });
+                }
+            });
+
+            char.addEventListener('mouseleave', () => {
+                // Return to base state
+                gsap.to(char, {
+                    y: 0,
+                    scale: 1,
+                    rotate: 0,
+                    color: '',
+                    textShadow: 'none',
+                    duration: 0.3, // Snappier exit
+                    ease: "power2.out"
+                });
+
+                // Reset neighbors
+                if (chars[index - 1]) {
+                    gsap.to(chars[index - 1], {
+                        y: 0,
+                        scale: 1,
+                        rotate: 0,
+                        color: '',
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                }
+                if (chars[index + 1]) {
+                    gsap.to(chars[index + 1], {
+                        y: 0,
+                        scale: 1,
+                        rotate: 0,
+                        color: '',
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                }
+            });
+        });
+    });
+
+    // Header Logo drop-down on page load (Elastic Drop)
+    const headerLogo = document.querySelector('#site-header .logo');
+    if (headerLogo) {
+        gsap.fromTo('#site-header .logo .logo-char', 
+            { 
+                y: -60, 
+                opacity: 0, 
+                scale: 0.3,
+                rotateX: -90,
+                filter: 'blur(5px)'
+            },
+            { 
+                y: 0, 
+                opacity: 1, 
+                scale: 1,
+                rotateX: 0,
+                filter: 'blur(0px)',
+                duration: 1.2, 
+                stagger: 0.08, 
+                ease: "elastic.out(1.1, 0.5)",
+                delay: 0.3,
+                onComplete: () => {
+                    if (headerLogo.startLogoIdle) headerLogo.startLogoIdle();
+                }
+            }
+        );
+    }
+
+    // Footer Logo spin-up on scroll
+    const footerLogo = document.querySelector('footer .logo');
+    if (footerLogo) {
+        gsap.fromTo('footer .logo .logo-char', 
+            { 
+                y: 40, 
+                opacity: 0,
+                scale: 0.7,
+                rotateY: 90,
+                filter: 'blur(4px)'
+            },
+            { 
+                y: 0, 
+                opacity: 1, 
+                scale: 1,
+                rotateY: 0,
+                filter: 'blur(0px)',
+                duration: 1, 
+                stagger: 0.06, 
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: 'footer .logo',
+                    start: 'top 95%',
+                    once: true,
+                    onComplete: () => {
+                        if (footerLogo.startLogoIdle) footerLogo.startLogoIdle();
+                    }
+                }
+            }
+        );
+    }
+
+    // Newsletter Heading Kinetic Reveal (Splitting words & letters)
+    const newsHeading = document.querySelector('.newsletter-heading');
+    if (newsHeading) {
+        const text = newsHeading.innerHTML;
+        const lines = text.split('<br>');
+        newsHeading.innerHTML = lines.map(line => {
+            return `<span class="line-wrap" style="display:block; overflow:hidden;">` + 
+                line.split(' ').map(word => {
+                    return `<span class="word-wrap" style="display:inline-block; white-space:nowrap; margin-right: 0.25em;">` + 
+                        word.split('').map(letter => {
+                            return `<span class="news-letter" style="display:inline-block; will-change:transform, opacity;">${letter}</span>`;
+                        }).join('') + 
+                    `</span>`;
+                }).join(' ') + 
+            `</span>`;
+        }).join('');
+
+        gsap.fromTo(newsHeading.querySelectorAll('.news-letter'), 
+            { 
+                yPercent: 100, 
+                opacity: 0, 
+                rotateX: -45, 
+                scale: 0.8 
+            },
+            {
+                scrollTrigger: {
+                    trigger: newsHeading,
+                    start: 'top 85%',
+                    once: true
+                },
+                yPercent: 0,
+                opacity: 1,
+                rotateX: 0,
+                scale: 1,
+                duration: 1.2,
+                stagger: 0.03,
+                ease: "power4.out"
+            }
+        );
+    }
 
     /* ---- 1. Custom Cursor & Interactions ---- */
     const cursor = document.getElementById('cursor-dot');
@@ -179,6 +414,12 @@ document.addEventListener('DOMContentLoaded', function() {
             trigger: stat,
             start: 'top 90%',
             onEnter: () => {
+                // Reveal the parent item first
+                gsap.fromTo(stat.closest('.stat-item'), 
+                    { y: 30, opacity: 0 }, 
+                    { y: 0, opacity: 1, duration: 1, ease: 'power3.out' }
+                );
+
                 gsap.to({ val: 0 }, {
                     val: target,
                     duration: 2.5,

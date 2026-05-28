@@ -23,10 +23,36 @@ if (!$order) {
 $method = $order['payment_method'];
 
 // Fetch payment settings for dynamic UPI redirection
-$p_settings = $pdo->query("SELECT upi_id, account_holder FROM payment_settings LIMIT 1")->fetch();
+$p_settings = $pdo->query("SELECT * FROM payment_settings LIMIT 1")->fetch();
+$razorpay_active = $p_settings['razorpay_active'] ?? 0;
 $upi_id = $p_settings['upi_id'] ?? 'shop@upi';
 $merchant_name = $p_settings['account_holder'] ?? 'BLACKHEAD';
 $merchant_name_encoded = urlencode($merchant_name);
+
+// Prepare Razorpay data if active
+$razorpay_data = [];
+if ($razorpay_active && !empty($order['razorpay_order_id'])) {
+    $razorpay_data = [
+        "key"               => $p_settings['razorpay_key_id'],
+        "amount"            => $order['final_amount'] * 100, // Amount in paise
+        "name"              => SITE_NAME,
+        "description"       => "Payment for Order #" . $order['order_number'],
+        "image"             => SITE_URL . "assets/images/logo.png",
+        "order_id"          => $order['razorpay_order_id'],
+        "prefill"           => [
+            "name"              => $_SESSION['user_name'] ?? "",
+            "email"             => $_SESSION['user_email'] ?? "",
+            "contact"           => $_SESSION['user_phone'] ?? "",
+        ],
+        "notes"             => [
+            "address"           => "Order Delivery Address",
+            "merchant_order_id" => $order['order_number'],
+        ],
+        "theme"             => [
+            "color"             => "#000000"
+        ],
+    ];
+}
 ?>
 
 <?php
@@ -52,9 +78,57 @@ $qr_uri = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . url
 
         <form action="backend/handlers/payment_handler.php" method="POST" id="payment-form">
             <input type="hidden" name="order_id" value="<?php echo $orderId; ?>">
+            <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+            <input type="hidden" name="razorpay_signature" id="razorpay_signature">
             
-            <?php if (in_array($method, ['upi', 'googlepay', 'paytm', 'phonepe', 'card'])): ?>
-                <div style="text-align: center;">
+            <?php if ($razorpay_active && !empty($order['razorpay_order_id'])): ?>
+                <!-- Razorpay Automated Content -->
+                <div style="text-align: center; padding: 20px 0;">
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+                        <img src="https://razorpay.com/assets/razorpay-glyph.svg" alt="Razorpay" style="height: 40px; margin-bottom: 15px;">
+                        <h4 style="margin: 0; color: #0369a1; font-weight: 800;">Official Payment Gateway</h4>
+                        <p style="font-size: 13px; color: #0c4a6e; margin-top: 10px;">Pay securely via UPI, Cards, Netbanking or Wallet.</p>
+                    </div>
+                    
+                    <button type="button" id="rzp-button1" class="btn btn-primary" style="width: 100%; padding: 20px; font-weight: 900; background: #3395FF; border: none; border-radius: 12px; font-size: 18px; box-shadow: 0 10px 20px rgba(51, 149, 255, 0.2);">
+                        <i class="fa-solid fa-shield-check" style="margin-right: 10px;"></i> PAY NOW WITH RAZORPAY
+                    </button>
+                    
+                    <p style="font-size: 11px; color: #999; margin-top: 20px;">
+                        <i class="fa-solid fa-lock"></i> Your transaction is encrypted and secured by Razorpay.
+                    </p>
+
+                    <!-- Professional QR Fallback -->
+                    <?php if(!empty($p_settings['qr_code'])): ?>
+                    <div style="margin-top: 30px; padding-top: 30px; border-top: 1px dashed #eee;">
+                        <p style="font-size: 11px; font-weight: 800; color: var(--admin-text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Or scan to pay via UPI</p>
+                        <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #eee; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                             <img src="<?php echo htmlspecialchars($p_settings['qr_code']); ?>" alt="Scan to Pay" style="width: 160px; height: 160px; display: block; margin: 0 auto; object-fit: contain;">
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <span style="font-size: 11px; color: var(--light-text); background: #f8fafc; padding: 4px 12px; border-radius: 100px; border: 1px solid #e2e8f0; font-weight: 700;">UPI ID: <?php echo htmlspecialchars($upi_id, ENT_QUOTES, 'UTF-8'); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                <script>
+                var options = <?php echo json_encode($razorpay_data); ?>;
+                options.handler = function (response){
+                    document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+                    document.getElementById('razorpay_signature').value = response.razorpay_signature;
+                    document.getElementById('payment-form').submit();
+                };
+                var rzp1 = new Razorpay(options);
+                document.getElementById('rzp-button1').onclick = function(e){
+                    rzp1.open();
+                    e.preventDefault();
+                }
+                </script>
+
+            <?php elseif (in_array($method, ['upi', 'googlepay', 'paytm', 'phonepe', 'card'])): ?>
+                <!-- Manual Payment Content (Existing) -->
                     
                     <?php if ($method == 'card'): ?>
                         <!-- Credit / Debit Card Form -->
@@ -123,7 +197,7 @@ $qr_uri = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . url
                             </div>
 
                             <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
-                                <p style="font-size: 11px; color: #999; margin-bottom: 5px;">UPI ID: <strong id="upi-id" style="color: #333;"><?php echo $upi_id; ?></strong></p>
+                                <p style="font-size: 11px; color: #999; margin-bottom: 5px;">UPI ID: <strong id="upi-id" style="color: #333;"><?php echo htmlspecialchars($upi_id, ENT_QUOTES, 'UTF-8'); ?></strong></p>
                                 <button type="button" onclick="copyUpiId()" style="background: var(--primary-color); color: white; border: none; padding: 5px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">COPY UPI ID</button>
                             </div>
                         </div>
@@ -150,7 +224,7 @@ $qr_uri = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . url
                                 }
                             ?>
                             <?php echo $gateway_logo; ?>
-                            <p style="font-size: 16px; font-weight: 700; margin-bottom: 15px;">Pay via <?php echo $gateway_name; ?></p>
+                            <p style="font-size: 16px; font-weight: 700; margin-bottom: 15px;">Pay via <?php echo htmlspecialchars($gateway_name, ENT_QUOTES, 'UTF-8'); ?></p>
                             <p style="font-size: 12px; color: #666; margin-bottom: 20px;">You are being redirected to <?php echo $gateway_name; ?>'s secure payment gateway for <strong><?php echo formatPrice($order['final_amount']); ?></strong>.<br>Please do not refresh the page.</p>
                             
                             <!-- Direct App Linking -->
@@ -171,7 +245,7 @@ $qr_uri = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . url
                         </div>
                     <?php endif; ?>
                     
-                    <?php if ($method != 'card'): ?>
+                    <?php if (!$razorpay_active && $method != 'card'): ?>
                     <div style="background: <?php echo ($method == 'upi') ? '#fff9e6' : '#f0f9ff'; ?>; border-left: 4px solid <?php echo ($method == 'upi') ? '#ffcc00' : '#0ea5e9'; ?>; padding: 15px; text-align: left; margin-bottom: 30px; border-radius: 0 8px 8px 0;">
                         <p style="font-size: 12px; color: <?php echo ($method == 'upi') ? '#856404' : '#0369a1'; ?>; line-height: 1.5; margin: 0;">
                             <strong>Instructions:</strong><br>
@@ -184,9 +258,11 @@ $qr_uri = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . url
             <?php endif; ?>
 
 
+            <?php if (!$razorpay_active): ?>
             <button type="submit" id="confirm-btn" class="btn btn-primary" style="width: 100%; padding: 18px; font-weight: 900; letter-spacing: 1px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
                 I HAVE COMPLETED THE PAYMENT
             </button>
+            <?php endif; ?>
             <div id="loader" style="display: none; text-align: center; margin-top: 20px;">
                 <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 24px; color: var(--primary-color);"></i>
                 <p style="font-size: 12px; margin-top: 10px; color: var(--light-text);">Finalizing your order...</p>

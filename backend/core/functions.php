@@ -1,19 +1,47 @@
 <?php
-// Get setting value from database
+// Get setting value from database (statically cached per-request to prevent N+1 queries)
 function getSetting($key, $default = '') {
     global $pdo;
+    static $cache = [];
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key] !== null ? $cache[$key] : $default;
+    }
     try {
         $stmt = $pdo->prepare("SELECT key_value FROM settings WHERE key_name = ?");
         $stmt->execute([$key]);
         $result = $stmt->fetch();
-        return $result ? $result['key_value'] : $default;
+        $cache[$key] = $result ? $result['key_value'] : null;
+        return $cache[$key] !== null ? $cache[$key] : $default;
     } catch (Exception $e) {
+        $cache[$key] = null;
         return $default;
     }
 }
+// CSRF Token generation and validation
+function generate_csrf_token() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validate_csrf_token($token) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        return false;
+    }
+    return true;
+}
+
+// Clean input
 function clean($data) {
     if ($data === null) return '';
-    return htmlspecialchars(stripslashes(trim($data)));
+    return stripslashes(trim($data));
 }
 
 // Format price
@@ -24,11 +52,13 @@ function formatPrice($price) {
 // Get Featured Products
 function getFeaturedProducts($pdo, $limit = 4) {
     $stmt = $pdo->prepare("
-        SELECT p.*, pi.image as product_image, 
+        SELECT p.*, c.name as cat_name, pi.image as product_image, 
                (SELECT SUM(stock_quantity) FROM product_variants WHERE product_id = p.id) as total_stock
         FROM products p 
+        LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1 
-        WHERE p.status = 'active' AND p.is_featured = 1 
+        WHERE p.status = 'active' AND (p.is_featured = 1 OR p.is_currently_hot = 1) 
+        GROUP BY p.id
         ORDER BY p.created_at DESC LIMIT ?
     ");
     $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
@@ -101,14 +131,17 @@ function addToCart($pdo, $productId, $quantity, $variantId, $userId, $sessionId,
 function redirect_to($url) {
     if (!headers_sent()) {
         header("Location: " . $url);
+        exit;
     }
-    
+
     // JS Fallback
+    $jsonUrl = json_encode($url);
     echo '<script type="text/javascript">';
-    echo 'window.location.href="' . $url . '";';
+    echo 'window.location.href=' . $jsonUrl . ';';
     echo '</script>';
     echo '<noscript>';
-    echo '<meta http-equiv="refresh" content="0;url=' . $url . '" />';
+    $safeUrl = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+    echo '<meta http-equiv="refresh" content="0;url=' . $safeUrl . '" />';
     echo '</noscript>';
     exit;
 }

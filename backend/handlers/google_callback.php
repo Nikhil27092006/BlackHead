@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../core/config.php';
-require_once '../core/functions.php';
+require_once __DIR__ . '/../core/config.php';
+require_once __DIR__ . '/../core/functions.php';
 
 if (isset($_GET['code'])) {
     // Verify state to prevent CSRF
@@ -30,17 +30,22 @@ if (isset($_GET['code'])) {
     $data = json_decode($response, true);
     curl_close($ch);
 
-    if (isset($data['access_token'])) {
-        $access_token = $data['access_token'];
+        if (isset($data['access_token'])) {
+            $access_token = $data['access_token'];
 
-        // Get user info
-        $user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo?access_token=" . $access_token;
-        $user_info_json = file_get_contents($user_info_url);
-        $user_info = json_decode($user_info_json, true);
+            // Get user info using curl (more reliable than file_get_contents)
+            $user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo";
+            $ch = curl_init($user_info_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $access_token]);
+            $user_info_json = curl_exec($ch);
+            curl_close($ch);
+            
+            $user_info = json_decode($user_info_json, true);
 
-        if (isset($user_info['email'])) {
-            $email = $user_info['email'];
-            $name = $user_info['name'] ?? 'Google User';
+            if (isset($user_info['email'])) {
+                $email = $user_info['email'];
+                $name = $user_info['name'] ?? 'Google User';
             $google_id = $user_info['id'];
 
             // Check if user exists
@@ -53,6 +58,12 @@ if (isset($_GET['code'])) {
                 $stmt = $pdo->prepare("INSERT INTO users (name, email, password, status) VALUES (?, ?, ?, 'active')");
                 $stmt->execute([$name, $email, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)]);
                 $user_id = $pdo->lastInsertId();
+
+                // Auto-subscribe to Inner Circle
+                try {
+                    $subStmt = $pdo->prepare("INSERT IGNORE INTO subscribers (email, status) VALUES (?, 'active')");
+                    $subStmt->execute([$email]);
+                } catch (Exception $e) { /* Ignore errors */ }
             } else {
                 $user_id = $user['id'];
                 $name = $user['name'];

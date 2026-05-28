@@ -250,26 +250,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <?php
-$categoryId = $_GET['category'] ?? null;
+$categorySlug = $_GET['category'] ?? null;
+$subcategorySlug = $_GET['subcategory'] ?? null;
 $sortBy = $_GET['sort'] ?? 'newest';
 $query = $_GET['q'] ?? '';
 
+// Get Category Info if slug provided
+$currentCategory = null;
+if ($categorySlug) {
+    $stmt = $pdo->prepare("SELECT * FROM categories WHERE slug = ?");
+    $stmt->execute([$categorySlug]);
+    $currentCategory = $stmt->fetch();
+}
+
+// Get Subcategory Info if slug provided
+$currentSubcategory = null;
+if ($subcategorySlug) {
+    $stmt = $pdo->prepare("SELECT * FROM categories WHERE slug = ?");
+    $stmt->execute([$subcategorySlug]);
+    $currentSubcategory = $stmt->fetch();
+}
+
 // Build Query
-$sql = "SELECT p.*, pi.image as product_image,
+$sql = "SELECT p.*, c.name as cat_name, pi.image as product_image,
         (SELECT SUM(stock_quantity) FROM product_variants WHERE product_id = p.id) as total_stock
         FROM products p 
+        LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1 
         WHERE p.status = 'active'";
 
 $params = [];
-if ($categoryId) {
-    if (is_numeric($categoryId)) {
-        $sql .= " AND p.category_id = ?";
-        $params[] = $categoryId;
-    } else {
-        $sql .= " AND p.category_id IN (SELECT id FROM categories WHERE slug = ?)";
-        $params[] = $categoryId;
-    }
+if ($currentCategory) {
+    $sql .= " AND p.category_id = ?";
+    $params[] = $currentCategory['id'];
+}
+if ($currentSubcategory) {
+    $sql .= " AND p.subcategory_id = ?";
+    $params[] = $currentSubcategory['id'];
 }
 
 if ($query) {
@@ -288,7 +305,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
 
-$categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE category_id = c.id AND status = 'active') as p_count FROM categories c WHERE status = 'active'")->fetchAll();
+$categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE category_id = c.id AND status = 'active') as p_count FROM categories c WHERE status = 'active' AND parent_id IS NULL")->fetchAll();
 ?>
 
 <div class="products-page-container">
@@ -299,14 +316,29 @@ $categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE cat
             <div class="page-title-wrap">
                 <span class="page-eyebrow">The Laboratory</span>
                 <h1 class="page-main-title">
-                    <?php 
-                    if ($categoryId) {
-                        foreach($categories as $cat) if($cat['slug'] == $categoryId) echo htmlspecialchars($cat['name']);
-                    } else {
-                        echo "ALL DROPS";
-                    }
-                    ?>
+                    <?php echo $currentCategory ? htmlspecialchars($currentCategory['name']) : "ALL DROPS"; ?>
                 </h1>
+                
+                <?php if ($currentCategory): 
+                    $subcats = $pdo->prepare("SELECT * FROM categories WHERE parent_id = ? AND status = 'active' ORDER BY name");
+                    $subcats->execute([$currentCategory['id']]);
+                    $subcategories = $subcats->fetchAll();
+                    
+                    if (!empty($subcategories)):
+                ?>
+                <div class="subcat-pill-bar" style="margin-top: 35px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <a href="index.php?page=products&category=<?php echo $categorySlug; ?>" 
+                       style="padding: 10px 24px; border-radius: 100px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: 0.3s; <?php echo !$subcategorySlug ? 'background: #8b5cf6; color: white;' : 'background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.1);'; ?>">
+                       ALL ITEMS
+                    </a>
+                    <?php foreach($subcategories as $sc): ?>
+                    <a href="index.php?page=products&category=<?php echo $categorySlug; ?>&subcategory=<?php echo $sc['slug']; ?>" 
+                       style="padding: 10px 24px; border-radius: 100px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: 0.3s; <?php echo $subcategorySlug == $sc['slug'] ? 'background: #8b5cf6; color: white;' : 'background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.1);'; ?>">
+                       <?php echo htmlspecialchars($sc['name']); ?>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; endif; ?>
             </div>
         </div>
     </div>
@@ -333,7 +365,7 @@ $categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE cat
                                 <span class="cat-count"><?php echo array_sum(array_column($categories, 'p_count')); ?></span>
                             </a>
                             <?php foreach($categories as $cat): ?>
-                                <a href="index.php?page=products&category=<?php echo $cat['slug']; ?>" class="cat-pill-link <?php echo $categoryId == $cat['slug'] ? 'active' : ''; ?>">
+                                <a href="index.php?page=products&category=<?php echo $cat['slug']; ?>" class="cat-pill-link <?php echo $categorySlug == $cat['slug'] ? 'active' : ''; ?>">
                                     <span><?php echo htmlspecialchars($cat['name']); ?></span>
                                     <span class="cat-count"><?php echo $cat['p_count']; ?></span>
                                 </a>
@@ -356,7 +388,7 @@ $categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE cat
                     <div class="results-count">Showing <strong><?php echo count($products); ?></strong> exclusive pieces</div>
                     <div class="sort-wrap">
                         <span class="sort-label">ORDER BY:</span>
-                        <select class="sort-custom-select" onchange="location.href='index.php?page=products&category=<?php echo $categoryId; ?>&q=<?php echo $query; ?>&sort='+this.value">
+                        <select class="sort-custom-select" onchange="location.href='index.php?page=products&category=<?php echo $categorySlug; ?>&subcategory=<?php echo $subcategorySlug; ?>&q=<?php echo $query; ?>&sort='+this.value">
                             <option value="newest" <?php echo $sortBy == 'newest' ? 'selected' : ''; ?>>LATEST DROPS</option>
                             <option value="price_low" <?php echo $sortBy == 'price_low' ? 'selected' : ''; ?>>PRICE: LOWEST</option>
                             <option value="price_high" <?php echo $sortBy == 'price_high' ? 'selected' : ''; ?>>PRICE: HIGHEST</option>
@@ -376,7 +408,7 @@ $categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE cat
                         <?php foreach($products as $p): 
                             $image = $p['product_image'] ?: 'placeholder.jpg';
                         ?>
-                        <div class="premium-product-card reveal-product">
+                        <div class="premium-product-card reveal-product" onclick="location.href='index.php?page=product&id=<?php echo $p['id']; ?>'" style="cursor:pointer;">
                             <div class="product-image-container">
                                 <?php if(isset($p['total_stock']) && $p['total_stock'] > 0 && $p['total_stock'] <= 3): ?>
                                     <div class="product-badge-premium" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">V. LOW STOCK</div>
@@ -387,14 +419,14 @@ $categories = $pdo->query("SELECT c.*, (SELECT COUNT(id) FROM products WHERE cat
                                 <form action="backend/handlers/wishlist_handler.php" method="POST">
                                     <input type="hidden" name="action" value="toggle">
                                     <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
-                                    <button type="submit" class="product-wishlist-btn">
+                                    <button type="submit" class="product-wishlist-btn" onclick="event.stopPropagation();">
                                         <i class="<?php echo isLoggedIn() && isInWishlist($pdo, $_SESSION['user_id'], $p['id']) ? 'fa-solid' : 'fa-regular'; ?> fa-heart"></i>
                                     </button>
                                 </form>
                             </div>
                             <div class="premium-product-info">
                                 <div>
-                                    <div class="premium-product-cat">Laboratroy Order #<?php echo 1000 + $p['id']; ?></div>
+                                    <div class="premium-product-cat"><?php echo htmlspecialchars($p['cat_name'] ?? 'The Lab Drop'); ?></div>
                                     <a href="index.php?page=product&id=<?php echo $p['id']; ?>" class="premium-product-name"><?php echo htmlspecialchars($p['name']); ?></a>
                                     
                                     <div class="premium-product-desc" style="font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 24px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3.2em;">
@@ -438,5 +470,16 @@ document.addEventListener('DOMContentLoaded', function() {
             y: 60, opacity: 0, duration: 1.2, stagger: 0.1, ease: 'expo.out', delay: 0.8
         });
     }
+
+    // Mouse-tracking glow effect for product cards
+    document.querySelectorAll('.premium-product-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
 });
 </script>

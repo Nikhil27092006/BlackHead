@@ -28,7 +28,7 @@ if (!$settings) {
                     <label>Custom QR Code Image (Optional)</label>
                     <?php if(!empty($settings['qr_code'])): ?>
                         <div style="margin-bottom: 15px; background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--admin-border); display: inline-block;">
-                            <img src="../<?php echo htmlspecialchars($settings['qr_code']); ?>" alt="Current QR Code" style="max-width: 140px; display: block; margin: 0 auto;">
+                            <img src="../../<?php echo htmlspecialchars($settings['qr_code']); ?>" alt="Current QR Code" style="max-width: 140px; display: block; margin: 0 auto;">
                             <div style="text-align: center; margin-top: 8px; font-size: 10px; font-weight: 800; color: var(--admin-accent); text-transform: uppercase;">Current Live QR</div>
                         </div>
                     <?php endif; ?>
@@ -58,7 +58,50 @@ if (!$settings) {
             </div>
         </div>
 
-        <h3 style="margin-bottom: 25px; font-size: 18px; font-weight: 900; letter-spacing: -0.5px; border-left: 4px solid var(--admin-accent); padding-left: 15px;"><i class="fa-solid fa-plug" style="margin-right: 10px; color: var(--admin-accent);"></i> Gateway Integrations</h3>
+        <h3 style="margin-bottom: 25px; font-size: 18px; font-weight: 900; letter-spacing: -0.5px; border-left: 4px solid #3395FF; padding-left: 15px;"><i class="fa-solid fa-bolt-lightning" style="margin-right: 10px; color: #3395FF;"></i> Official Razorpay Integration</h3>
+        
+        <div style="background: #f0f7ff; border: 1px solid #cce3ff; padding: 30px; border-radius: 18px; margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div>
+                    <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #002e6e;">Razorpay Automated Gateway</h4>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">When enabled, this replaces manual UPI links with the professional Razorpay Checkout.</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="text-align: right;">
+                        <span style="display: block; font-size: 10px; font-weight: 800; color: #666; text-transform: uppercase;">Environment</span>
+                        <select name="is_payment_live" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; font-weight: 700;">
+                            <option value="0" <?php echo !($settings['is_payment_live'] ?? 0) ? 'selected' : ''; ?>>TEST MODE</option>
+                            <option value="1" <?php echo ($settings['is_payment_live'] ?? 0) ? 'selected' : ''; ?>>LIVE PRODUCTION</option>
+                        </select>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="razorpay_active" value="1" <?php echo ($settings['razorpay_active'] ?? 0) ? 'checked' : ''; ?>>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid-2" style="gap: 20px;">
+                <div class="premium-form-group">
+                    <label>Razorpay Key ID</label>
+                    <input type="text" name="razorpay_key_id" class="premium-input" value="<?php echo htmlspecialchars($settings['razorpay_key_id'] ?? ''); ?>" placeholder="rzp_test_XXXXXXXXXXXXXX">
+                </div>
+                <div class="premium-form-group">
+                    <label>Razorpay Key Secret</label>
+                    <input type="password" name="razorpay_key_secret" class="premium-input" value="<?php echo htmlspecialchars($settings['razorpay_key_secret'] ?? ''); ?>" placeholder="••••••••••••••••">
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; border: 1px dashed #3395FF;">
+                <p style="margin: 0; font-size: 12px; color: #3395FF; font-weight: 600;">
+                    <i class="fa-solid fa-circle-info"></i> <strong>Webhook URL:</strong> 
+                    <code style="background: #eef2ff; padding: 2px 6px; border-radius: 4px;"><?php echo SITE_URL; ?>backend/handlers/razorpay_webhook.php</code>
+                </p>
+                <small style="display: block; margin-top: 5px; color: #666;">Copy this URL to your Razorpay Dashboard Settings > Webhooks to enable background payment confirmation.</small>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 25px; font-size: 18px; font-weight: 900; letter-spacing: -0.5px; border-left: 4px solid var(--admin-accent); padding-left: 15px;"><i class="fa-solid fa-plug" style="margin-right: 10px; color: var(--admin-accent);"></i> Legacy Manual Gateways</h3>
         
         <div class="grid-3" style="gap: 25px; margin-bottom: 40px;">
             <!-- Google Pay -->

@@ -38,6 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stripe_secret_key = clean($_POST['stripe_secret_key'] ?? '');
     $stripe_active = isset($_POST['stripe_active']) ? 1 : 0;
 
+    // Razorpay
+    $razorpay_key_id = clean($_POST['razorpay_key_id'] ?? '');
+    $razorpay_key_secret = clean($_POST['razorpay_key_secret'] ?? '');
+    $razorpay_active = isset($_POST['razorpay_active']) ? 1 : 0;
+    $is_payment_live = isset($_POST['is_payment_live']) ? (int)$_POST['is_payment_live'] : 0;
+
     // Get current settings to preserve existing QR code if no new one is uploaded
     $stmt = $pdo->query("SELECT qr_code FROM payment_settings LIMIT 1");
     $currentSettings = $stmt->fetch();
@@ -95,8 +101,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             phonepe_active = ?,
             stripe_public_key = ?,
             stripe_secret_key = ?,
-            stripe_active = ?
-            LIMIT 1");
+            stripe_active = ?,
+            razorpay_key_id = ?,
+            razorpay_key_secret = ?,
+            razorpay_active = ?,
+            is_payment_live = ?
+            WHERE id = 1");
         
         $stmt->execute([
             $upi_id,
@@ -118,7 +128,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $phonepe_active,
             $stripe_public_key,
             $stripe_secret_key,
-            $stripe_active
+            $stripe_active,
+            $razorpay_key_id,
+            $razorpay_key_secret,
+            $razorpay_active,
+            $is_payment_live
         ]);
 
         $_SESSION['success'] = "Payment settings updated successfully!";

@@ -11,21 +11,29 @@
     <div class="auth-container">
         <div class="auth-header" style="text-align: center; margin-bottom: 30px;">
             <h2 style="font-weight: 900; text-transform: uppercase;">Phone Login</h2>
-            <p style="font-size: 14px; color: var(--light-text);">We'll send a 6-digit OTP to your phone.</p>
+            <p style="font-size: 14px; color: var(--light-text);">Enter your details to continue.</p>
         </div>
-
         <form action="<?php echo SITE_URL; ?>backend/handlers/social_auth_handler.php" method="POST">
             <input type="hidden" name="action" value="phone_login">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <?php if(isset($_GET['redirect'])): ?>
+                <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_GET['redirect']); ?>">
+            <?php endif; ?>
             
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" class="form-control" placeholder="Enter your full name" required>
+            </div>
+
             <div class="form-group">
                 <label>Mobile Number</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" value="+91" readonly style="width: 60px; text-align: center; border: 1px solid var(--primary-color);">
+                    <input type="text" value="+91" readonly style="width: 60px; text-align: center; border: 1px solid var(--primary-color); background: #eee;">
                     <input type="tel" name="phone" class="form-control" placeholder="9876543210" required pattern="[0-9]{10}">
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px;">Get OTP</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px;">Login / Register</button>
         </form>
 
         <div style="text-align: center; margin-top: 20px;">
